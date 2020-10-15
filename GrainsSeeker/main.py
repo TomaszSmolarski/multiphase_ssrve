@@ -1,12 +1,8 @@
 import cv2
-from GrainsSeeker import ImageConfig
 from GrainsSeeker import RatiosConfig as rc
+from GrainsSeeker import ImageConfig, statistics_ratios_class as src, DataGatherer as dg
 from GrainsSeeker.grain_class import Grain
-from GrainsSeeker import DataGatherer as dg
 import numpy as np
-from GrainsSeeker import statistics_ratios_class as src
-import multiprocessing
-
 
 
 def findContoursAndCalculateRatios(layer, phase, background, grains):
@@ -49,14 +45,15 @@ def mainFunction(image, ratios=[], colors={}, background=''):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         index = index + 1
-
+    '''
     # DLA KAŻDEJ FAZY WYWOŁANIE FUNKCJI SZUKAJĄCEJ ZIAREN
     for phase in range(len(ImageConfig.colors_map)):
         phaseName = list(ImageConfig.colors_map.keys())
         findContoursAndCalculateRatios(PhaseLayers[:, :, phase], phaseName[phase], background, grains)
-
+    '''
     st = src.Statistics()
     st.blr()
     st.dispertion(grains, 1)
     st.onePointProb()
-    return dg.createSeriesFromRatios(grains), st.returnRatios()
+    dg.createSeriesFromRatios(grains)
+    return [], st.returnRatios()

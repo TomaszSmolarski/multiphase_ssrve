@@ -1,9 +1,6 @@
-import matplotlib.pyplot as plt
-from GrainsSeeker import RatiosConfig as rc
 from GrainsSeeker import ImageConfig as ic
 import pandas as pd
-from collections import Counter
-from GrainsSeeker import grain_class
+
 pd.options.display.float_format = '{:.15f}'.format
 resultsForEachPhase = []
 

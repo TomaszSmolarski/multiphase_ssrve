@@ -1,6 +1,5 @@
-from GrainsSeeker import ImageConfig as ic
+from GrainsSeeker import ImageConfig as ic, grain_class as gc
 import itertools
-from GrainsSeeker import grain_class as gc
 
 
 class Statistics:

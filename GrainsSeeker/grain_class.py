@@ -1,8 +1,7 @@
-import numpy as np
+from GrainsSeeker import ratios_class
 from GrainsSeeker import ImageConfig
 import cv2
 import math
-from GrainsSeeker import ratios_class
 
 
 class Grain(ratios_class.Ratios):
