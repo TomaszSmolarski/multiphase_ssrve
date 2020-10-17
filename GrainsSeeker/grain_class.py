@@ -13,6 +13,7 @@ class Grain(ratios_class.Ratios):
         self.area = 0
         self.getArea()
         self.centerOfMass = []
+        self.centerOfMassLocal = []
         self.distanceFromCenterPower = 0
         self.distanceFromCenter = 0
         self.minDistanceFromEgdeSum = 0
@@ -30,7 +31,6 @@ class Grain(ratios_class.Ratios):
         self.calculateRatios()
 
     def calculateComDistancesHightWidth(self):
-        self.findCoM()
         self.calculateDistancesSumFromCenter()
         self.calculateHeightWidth()
         self.calculateMaxMinFromCenter()
@@ -47,7 +47,7 @@ class Grain(ratios_class.Ratios):
         self.domain = domain
         self.area = len(self.domain)
 
-    def findCoM(self):  # srodek ciezkosci
+    def findCoM(self, offsetX=0, offsetY=0):  # srodek ciezkosci
         allx = 0
         ally = 0
         for i in range(self.area):
@@ -57,24 +57,32 @@ class Grain(ratios_class.Ratios):
         meanY = int(ally / self.area)
         self.centerOfMass.append(meanX)
         self.centerOfMass.append(meanY)
+        self.centerOfMassLocal.append(meanX - offsetX*ImageConfig.widthOffset)
+        self.centerOfMassLocal.append(meanY - offsetY*ImageConfig.heightOffset)
 
     def calculateDistancesSumFromCenter(
             self):  # suma odleglosci od srodka ciezkosci, jeden to kazda odleglosc podniesiona do kwadratu
         distanceSumPower = 0
         distanceSum = 0
         for p in self.domain:
-            distanceSumPower += self.calculateDistance(p[0], p[1], self.centerOfMass[0], self.centerOfMass[1]) ** 2
-            distanceSum += self.calculateDistance(p[0], p[1], self.centerOfMass[0], self.centerOfMass[1])
+            distpower = (self.centerOfMass[0] - p[0]) ** 2 + (self.centerOfMass[1] - p[1]) ** 2
+            dist = math.sqrt(distpower)
+            # distanceSumPower += self.calculateDistance(p[0], p[1], self.centerOfMass[0], self.centerOfMass[1]) ** 2
+            distanceSumPower += distpower
+            # distanceSum += self.calculateDistance(p[0], p[1], self.centerOfMass[0], self.centerOfMass[1])
+            distanceSum += dist
         self.distanceFromCenter = distanceSum
         self.distanceFromCenterPower = distanceSumPower
 
-    def findMinDistSum(self):  # suma minimalna odleglosc od krawedzi
+    def findMinDistSum(self):  # suma minimalnych odleglosc od krawedzi
         mindist = float('inf')
         for areaPoint in self.domain:
             for edgePoint in self.edge:
                 if areaPoint[0] == edgePoint[0][0] and areaPoint[1] == edgePoint[0][1]:
                     continue
-                dist = self.calculateDistance(areaPoint[0], areaPoint[1], edgePoint[0][0], edgePoint[0][1])
+                # dist = self.calculateDistance(areaPoint[0], areaPoint[1], edgePoint[0][0], edgePoint[0][1])
+                x = (edgePoint[0][0] - areaPoint[0]) ** 2 + (edgePoint[0][1] - areaPoint[0]) ** 2
+                dist = math.sqrt(x)
                 if dist < mindist:
                     mindist = dist
             self.minDistanceFromEgdeSum += mindist
@@ -87,8 +95,12 @@ class Grain(ratios_class.Ratios):
             for edgePoint2 in self.edge:
                 if edgePoint1[0][0] == edgePoint2[0][0] and edgePoint1[0][1] == edgePoint2[0][1]:
                     continue
-                distX = self.calculateDistance(edgePoint1[0][0], 0, edgePoint2[0][0], 0)
-                distY = self.calculateDistance(0, edgePoint1[0][1], 0, edgePoint2[0][1])
+                x = (edgePoint2[0][0] - edgePoint1[0][0]) ** 2
+                y = (edgePoint2[0][1] - edgePoint1[0][1]) ** 2
+                # distX = self.calculateDistance(edgePoint1[0][0], 0, edgePoint2[0][0], 0)
+                # distY = self.calculateDistance(0, edgePoint1[0][1], 0, edgePoint2[0][1])
+                distX = math.sqrt(x)
+                distY = math.sqrt(y)
                 if distX > maxXdist:
                     maxXdist = distX
                 if distY > maxYdist:
@@ -100,7 +112,9 @@ class Grain(ratios_class.Ratios):
         maxdist = -1
         mindist = float('inf')
         for edgePoint in self.edge:
-            dist = self.calculateDistance(edgePoint[0][0], edgePoint[0][1], self.centerOfMass[0], self.centerOfMass[1])
+            x = (self.centerOfMass[0] - edgePoint[0][0]) ** 2 + (self.centerOfMass[1] - edgePoint[0][1]) ** 2
+            # dist = self.calculateDistance(edgePoint[0][0], edgePoint[0][1], self.centerOfMass[0], self.centerOfMass[1])
+            dist = math.sqrt(x)
             if dist > maxdist:
                 maxdist = dist
             if dist < mindist:
@@ -115,7 +129,9 @@ class Grain(ratios_class.Ratios):
             for edgePoint2 in self.edge:
                 if edgePoint1[0][0] == edgePoint2[0][0] and edgePoint1[0][1] == edgePoint2[0][1]:
                     continue
-                dist = self.calculateDistance(edgePoint1[0][0], edgePoint1[0][1], edgePoint2[0][0], edgePoint2[0][1])
+                x = (edgePoint2[0][0] - edgePoint1[0][0]) ** 2 + (edgePoint2[0][1] - edgePoint1[0][1]) ** 2
+                # dist = self.calculateDistance(edgePoint1[0][0], edgePoint1[0][1], edgePoint2[0][0], edgePoint2[0][1])
+                dist = math.sqrt(x)
                 if dist > maxdist:
                     coordinates[0] = edgePoint1[0][0]  # x1
                     coordinates[1] = edgePoint1[0][1]  # y1
@@ -126,13 +142,13 @@ class Grain(ratios_class.Ratios):
         self.maxDistancePoints = maxdist
         self.maxDistanceVectorCoords = [coordinates[2] - coordinates[0], coordinates[3] - coordinates[1]]
 
-    def calculateDistance(self, x1, y1, x2, y2):
-        distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        return distance
-
-    def calculateDistanceList(self, coordsList):
-        distance = math.sqrt((coordsList[2] - coordsList[0]) ** 2 + (coordsList[3] - coordsList[1]) ** 2)
-        return distance
+    # def calculateDistance(self, x1, y1, x2, y2):
+    #     distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    #     return distance
+    #
+    # def calculateDistanceList(self, coordsList):
+    #     distance = math.sqrt((coordsList[2] - coordsList[0]) ** 2 + (coordsList[3] - coordsList[1]) ** 2)
+    #     return distance
 
     def findVectorPerendicular(self):
         dst = []

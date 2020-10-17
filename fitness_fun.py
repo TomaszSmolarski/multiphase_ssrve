@@ -5,12 +5,12 @@ from default_config import ratios_weights
 def calculate_candidate_mean_square_error(series_from_ratios, stats, target_series_from_ratios, target_stats):
     x = 0
     number_of_coefficients = 0
-    '''
+
     for target_phase_params, test_phase_params in zip(target_series_from_ratios.values(), series_from_ratios.values()):
 
-        if len(test_phase_params) == 0:
-            for ratio in target_phase_params.keys():
-                test_phase_params[ratio] = {}
+        #if len(test_phase_params) == 0:
+        #    for ratio in target_phase_params.keys():
+        #        test_phase_params[ratio] = {}
 
         for target_ratios, test_ratios in zip(target_phase_params.items(), test_phase_params.items()):
 
@@ -29,7 +29,7 @@ def calculate_candidate_mean_square_error(series_from_ratios, stats, target_seri
             elif target_list_len<test_list_len:
                 for nr in range(target_list_len, test_list_len):
                     x += ratios_weights[target_ratios[0]] * pow(test_ratios_list[nr], 2)
-    '''
+
     for target_stats_elem, test_stats_elem in zip(target_stats.values(), stats.values()):
         for target_stats, test_stats in zip(list(target_stats_elem.values()), list(test_stats_elem.values())):
             x += 1 * pow(test_stats - target_stats, 2)

@@ -13,19 +13,20 @@ from fitness_fun import calculate_candidate_mean_square_error
 
 class AbstractOptimize(ABC):
     def __init__(self, picture_path, threads, colors, x_size, y_size,
-                 pop_size, ratios):
+                 pop_size, ratios,ratios_periodic):
         super().__init__()
         self.picture_path = picture_path
         self.ratios = ratios
         self.colors = colors
-        self.background_color = list(self.colors.values())[-1]
-        self.background_color_key = list(self.colors.keys())[-1]
         self.colors_len = len(list(self.colors.values()))
         self.x_size = x_size
         self.y_size = y_size
+        self.background_color = list(self.colors.values())[-1]
+        self.background_color_key = list(self.colors.keys())[-1]
         self.threads = threads
         self.pop_size = pop_size
         self.start_time = time()
+        self.ratios_periodic = ratios_periodic
         self.target_series_from_ratios, self.target_stats = self.target_calc()
 
     def time_observer(self, population, num_generations, num_evaluations, args):
@@ -36,7 +37,7 @@ class AbstractOptimize(ABC):
     def target_calc(self):
         image = cv2.imread(self.picture_path)
         seriesFromRatios, stats = mainFunction(image, ratios=self.ratios, colors=self.colors,
-                                               background=self.background_color_key)
+                                               background=self.background_color_key,periodical=self.ratios_periodic)
         return seriesFromRatios, stats
 
     @abstractmethod
@@ -74,7 +75,7 @@ class AbstractOptimize(ABC):
         args = (self.create_starting_points_from_candidate(starting_points))
         img = self.create_ssrve_image(args)
         series_from_ratios, stats = mainFunction(img, ratios=self.ratios, colors=self.colors,
-                                                 background=self.background_color_key)
+                                                 background=self.background_color_key, periodical=self.ratios_periodic)
 
         # Blad sredniokwadratowy dla danego osobnika
         candidate_fitness = calculate_candidate_mean_square_error(series_from_ratios, stats,

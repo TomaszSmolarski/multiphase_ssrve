@@ -1,3 +1,4 @@
+import random
 from math import sqrt
 from random import choices
 
@@ -30,15 +31,18 @@ def indexes_to_rgb(colors, indexes_list):
     return rgb_list
 
 
-def list_of_shapes_colors(ratios, colors, seriesFromRatios):
-    #colors_list = []
+def list_of_shapes_colors(ratios, colors, seriesFromRatios,stats):
     colors_indexes = []
     keys = list(colors.keys())
     keys.pop()  # pop last color (background color)
-    for index, phase in enumerate(keys):
-        if len(seriesFromRatios[phase]) > 0:
-            color_rgb = colors[phase]
-            for i in range(len(seriesFromRatios[phase][ratios[0].lower()])):
-                #colors_list.append(rgb2hex(color_rgb[0], color_rgb[1], color_rgb[2]))
-                colors_indexes.append(index)
+    if ratios:
+        for index, phase in enumerate(keys):
+            if len(seriesFromRatios[phase]) > 0:
+                for i in range(len(seriesFromRatios[phase][ratios[0].lower()])):
+                    colors_indexes.append(index)
+    else:
+        colors_weights = [weight for weight in stats['onePointprobability'].values()]
+        colors_weights.pop()
+        colors_indexes = random.choices(range(0, len(keys)), weights=colors_weights, k=12)
+
     return colors_indexes

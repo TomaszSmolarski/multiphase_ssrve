@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 image = []
+imageCopy = []
 width = 0
 height = 0
 colorsNumber = 0
@@ -9,7 +10,8 @@ colors_map = {
     'bainite': (172, 255, 46),
     'martensite': (255, 0, 0)
 }
-
+heightOffset = 0
+widthOffset = 0
 
 
 

@@ -4,7 +4,7 @@ d_knots_number = 16
 d_pop_size = 20
 d_threads = 4
 d_starting_points_number = 30
-
+d_ratios_periodic = False
 d_ratios = ['Malinowska',
             'Blair Bliss',
             'Danielsson',

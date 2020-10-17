@@ -4,20 +4,23 @@ import math
 from random import randrange
 from SplineOptimization.shapes_fun import calc_grid_size, indexes_to_rgb, list_of_shapes_colors
 from SplineOptimization.ssrve_fun import create_ssrve_image
-from default_config import d_threads, d_colors, d_x_size, d_y_size, d_knots_number, d_pop_size, d_ratios
+from default_config import d_threads, d_colors, d_x_size, d_y_size, d_knots_number,\
+    d_pop_size, d_ratios, d_ratios_periodic
 from optimization_abstract import AbstractOptimize
 
 
 class SplineOptimize(AbstractOptimize):
-    def __init__(self, picture_path, periodic_type_f, threads=d_threads, colors=d_colors, x_size=d_x_size,
+    def __init__(self, picture_path, periodic_type_f,ratios_periodic = d_ratios_periodic, threads=d_threads, colors=d_colors, x_size=d_x_size,
                  y_size=d_y_size,
                  knots_number=d_knots_number, pop_size=d_pop_size, ratios=d_ratios, ):
         super().__init__(picture_path=picture_path, threads=threads, colors=colors,
-                         x_size=x_size, y_size=y_size, pop_size=pop_size, ratios=ratios)
+                         x_size=x_size, y_size=y_size, pop_size=pop_size, ratios=ratios,
+                         ratios_periodic=ratios_periodic)
 
         self.knots_number = knots_number
-        self.shapes_colors = list_of_shapes_colors(self.ratios, self.colors, self.target_series_from_ratios)
-        self.number_of_shapes = len(self.shapes_colors)
+        self.shapes_indexes = list_of_shapes_colors(self.ratios, self.colors,
+                                                    self.target_series_from_ratios, self.target_stats)
+        self.number_of_shapes = len(self.shapes_indexes)
         self.grid_size = calc_grid_size(self.number_of_shapes)
         self.shapes_range = self.generate_shapes_range()
         self.activation_number = 30
@@ -46,7 +49,7 @@ class SplineOptimize(AbstractOptimize):
                 shapes.append(randrange(shape["x"][0], shape["x"][1]))
                 shapes.append(randrange(shape["y"][0], shape["y"][1]))
                 shapes.append(randrange(0, 100))  # activation value of point
-        shapes.extend(random.sample(self.shapes_colors, len(self.shapes_colors)))
+        shapes.extend(random.sample(self.shapes_indexes, len(self.shapes_indexes)))
 
         return shapes
 
