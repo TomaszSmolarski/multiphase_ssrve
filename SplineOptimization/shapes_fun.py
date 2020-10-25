@@ -31,18 +31,22 @@ def indexes_to_rgb(colors, indexes_list):
     return rgb_list
 
 
-def list_of_shapes_colors(ratios, colors, seriesFromRatios,stats):
+def list_of_shapes_colors(ratios, colors, seriesFromRatios, stats, background_color_key):
     colors_indexes = []
-    keys = list(colors.keys())
-    keys.pop()  # pop last color (background color)
+    indexes_dict = {phase: index for index, phase in enumerate(colors.keys())}
+    indexes_dict.pop(background_color_key)
     if ratios:
-        for index, phase in enumerate(keys):
+        for phase, index in indexes_dict.items():
             if len(seriesFromRatios[phase]) > 0:
                 for i in range(len(seriesFromRatios[phase][ratios[0].lower()])):
                     colors_indexes.append(index)
+        if len(colors_indexes) > 25:
+            colors_weights = [weight for phase, weight in stats['onePointprobability'].items() if
+                              phase != background_color_key]
+            colors_indexes = random.choices(list(indexes_dict.values()), weights=colors_weights, k=25)
     else:
-        colors_weights = [weight for weight in stats['onePointprobability'].values()]
-        colors_weights.pop()
-        colors_indexes = random.choices(range(0, len(keys)), weights=colors_weights, k=12)
+        colors_weights = [weight for phase, weight in stats['onePointprobability'].items() if
+                          phase != background_color_key]
+        colors_indexes = random.choices(list(indexes_dict.values()), weights=colors_weights, k=25)
 
     return colors_indexes

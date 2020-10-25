@@ -1,34 +1,28 @@
 import math
 from default_config import ratios_weights
-
+from statistics import median
 
 def calculate_candidate_mean_square_error(series_from_ratios, stats, target_series_from_ratios, target_stats):
     x = 0
     number_of_coefficients = 0
 
     for target_phase_params, test_phase_params in zip(target_series_from_ratios.values(), series_from_ratios.values()):
-
         #if len(test_phase_params) == 0:
         #    for ratio in target_phase_params.keys():
         #        test_phase_params[ratio] = {}
-
         for target_ratios, test_ratios in zip(target_phase_params.items(), test_phase_params.items()):
 
-            target_ratios_list = list(target_ratios[1].values())
-            test_ratios_list = list(test_ratios[1].values())
-            target_list_len = len(target_ratios_list)
-            test_list_len = len(test_ratios_list)
+            if target_ratios[1]:
+                target_ratios_median = median(list(target_ratios[1].values()))
+            else:
+                target_ratios_median = 0
 
-            list_range = min(target_list_len,test_list_len)
-            for nr in range(list_range):
-                x += ratios_weights[target_ratios[0]] * pow(test_ratios_list[nr] - target_ratios_list[nr], 2)
+            if test_ratios[1]:
+                test_ratios_median = median(list(test_ratios[1].values()))
+            else:
+                test_ratios_median = 1
 
-            if target_list_len>test_list_len:
-                for nr in range(test_list_len, target_list_len):
-                    x += ratios_weights[target_ratios[0]] * pow(target_ratios_list[nr], 2)
-            elif target_list_len<test_list_len:
-                for nr in range(target_list_len, test_list_len):
-                    x += ratios_weights[target_ratios[0]] * pow(test_ratios_list[nr], 2)
+            x += ratios_weights[target_ratios[0]] * pow(test_ratios_median - target_ratios_median, 2)
 
     for target_stats_elem, test_stats_elem in zip(target_stats.values(), stats.values()):
         for target_stats, test_stats in zip(list(target_stats_elem.values()), list(test_stats_elem.values())):
@@ -36,5 +30,3 @@ def calculate_candidate_mean_square_error(series_from_ratios, stats, target_seri
             number_of_coefficients+=1
 
     return 1 / number_of_coefficients * math.sqrt(x)
-
-

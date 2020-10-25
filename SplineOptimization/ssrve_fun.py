@@ -6,20 +6,19 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import cv2
-from SplineOptimization.shapes_fun import rgb2hex
-from SplineOptimization.periodic_fun import not_period_splines
+
 
 def create_ssrve_image(knots, shapes_colors, background_color, periodic_type_f,
-                       x_size, y_size, dpi=100):
+                       x_size, y_size, dpi=100, splines_dpi=100):
     curves = [not_intersecting_polygen(curve) for curve in knots]
     plt = pyplot_config(background_color, x_size, y_size, dpi)
-    return make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type_f)
+    return make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type_f, splines_dpi)
 
 
 def pyplot_config(background_color, x_size, y_size, dpi):
     mpl.rcParams['savefig.pad_inches'] = 0
     plt.figure(figsize=(x_size / dpi, y_size / dpi), dpi=dpi,
-               facecolor=rgb2hex(background_color[0], background_color[1], background_color[2]),
+               facecolor=background_color,
                )
     # no coordinate system
     ax = plt.axes([0, 0, 1, 1], frameon=False)
@@ -41,7 +40,7 @@ def not_intersecting_polygen(array_of_points):
     return array_of_points
 
 
-def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type_f):
+def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type_f, splines_dpi):
     for nr, ctrp in enumerate(curves):
 
         ctr = np.array(ctrp)
@@ -50,7 +49,7 @@ def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type
         l = len(x)
         '''
         tck, u = interpolate.splprep([x, y], k=3, s=0)
-        u = np.linspace(0, 1, (max(l * 2, 700)), endpoint=True)
+        u = np.linspace(0, 1, (max(l * 2, splines_dpi)), endpoint=True) #700
         out = interpolate.splev(u, tck)
         '''
         # interpolate
@@ -58,7 +57,7 @@ def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type
         t = np.append([0, 0, 0], t)
         t = np.append(t, [1, 1, 1])
         tck = [t, [x, y], 3]
-        u3 = np.linspace(0, 1, (max(l * 2, 420)), endpoint=True)
+        u3 = np.linspace(0, 1, (max(l * 2, splines_dpi)), endpoint=True)
         out = interpolate.splev(u3, tck)
 
         x, y = periodic_type_f(x_size, y_size, out[0], out[1])
@@ -66,7 +65,6 @@ def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type
         for x_el, y_el in zip(x, y):
             plt.fill(x_el, y_el, color=shapes_colors[nr],
                      edgecolor=shapes_colors[nr], antialiased=False)
-
     fig = plt.gcf()
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
@@ -76,22 +74,8 @@ def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type
     return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
 
-def save_to_file(filename, image_open_cv):
+def save_to_file(file_path, image_open_cv):
     try:
-        cv2.imwrite(filename, img=image_open_cv)
+        cv2.imwrite(file_path, img=image_open_cv)
     except:
         print('first render file')
-
-cur = [[[50, 50], [100, 50], [100, 100], [50, 100]]
-       ]
-sh = ['#111222', '#334455']
-bc = (255, 255, 255)
-args = (cur,sh,bc,not_period_splines,400,400)
-kwargs = {"knots": cur, "shapes_colors":sh, "background_color":bc, "x_size":200, "y_size":300, "periodic_type_f":not_period_splines }
-#im = create_ssrve_image(cur, sh, bc, x_size=400, y_size=400, periodic_type_f=period_splines)
-def x (kwargs):
-    im = create_ssrve_image(**kwargs)
-    save_to_file('../aaaa1.png', im)
-#im = create_ssrve_image(**kwargs)
-#save_to_file('../aaaa2.png', im)
-x(kwargs)

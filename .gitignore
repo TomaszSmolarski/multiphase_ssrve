@@ -1,4 +1,4 @@
 .idea
 __pycache__
-individuals.csv
-stats.csv
+Tests_results/250x250_M_BB/GR_p16_nrp_np_PSO_me1000_ns3_i0,5_cr1,4_sr1,4/1/individuals.csv
+Tests_results/250x250_M_BB/GR_p16_nrp_np_PSO_me1000_ns3_i0,5_cr1,4_sr1,4/1/stats.csv

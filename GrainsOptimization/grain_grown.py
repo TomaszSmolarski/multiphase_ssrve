@@ -40,7 +40,6 @@ def create_ssrve_image(starting_points, height, width, colors_bgr_list, periodic
     for x, y, color in starting_points:
         ssrve[x][y] = colors_bgr_list[color]
         pts.append((x, y))
-
     while any((255, 255, 255) in row for row in ssrve):
         ssrve, pts = change_gen(ssrve, height, width, pts, periodic_type_f)
     return np.array(ssrve)
