@@ -5,7 +5,7 @@ import numpy as np
 from GrainsOptimization.periodic_fun import period_grid, neighbours_colors_list
 
 
-def change_gen(ssrve, height, width, edge_points, periodic_type_f):
+def change_gen(ssrve, height, width, edge_points, periodic_type_f,i):
     copy_ssrve = copy.deepcopy(ssrve)
     points_to_check = set()
     for x, y in edge_points:
@@ -30,7 +30,6 @@ def change_gen(ssrve, height, width, edge_points, periodic_type_f):
             if len(colors_list) > 0:
                 new_edge_points.add((x, y))
                 copy_ssrve[x][y] = max(set(colors_list), key=colors_list.count)
-
     return copy_ssrve, new_edge_points
 
 
@@ -40,6 +39,9 @@ def create_ssrve_image(starting_points, height, width, colors_bgr_list, periodic
     for x, y, color in starting_points:
         ssrve[x][y] = colors_bgr_list[color]
         pts.append((x, y))
+    i = 0
     while any((255, 255, 255) in row for row in ssrve):
-        ssrve, pts = change_gen(ssrve, height, width, pts, periodic_type_f)
+        ssrve, pts = change_gen(ssrve, height, width, pts, periodic_type_f,i)
+        i+=1
     return np.array(ssrve)
+

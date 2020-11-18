@@ -40,13 +40,13 @@ def list_of_shapes_colors(ratios, colors, seriesFromRatios, stats, background_co
             if len(seriesFromRatios[phase]) > 0:
                 for i in range(len(seriesFromRatios[phase][ratios[0].lower()])):
                     colors_indexes.append(index)
-        if len(colors_indexes) > 25:
+        if len(colors_indexes) > 36:
             colors_weights = [weight for phase, weight in stats['onePointprobability'].items() if
                               phase != background_color_key]
-            colors_indexes = random.choices(list(indexes_dict.values()), weights=colors_weights, k=25)
+            colors_indexes = random.choices(list(indexes_dict.values()), weights=colors_weights, k=36)
     else:
         colors_weights = [weight for phase, weight in stats['onePointprobability'].items() if
                           phase != background_color_key]
-        colors_indexes = random.choices(list(indexes_dict.values()), weights=colors_weights, k=25)
+        colors_indexes = random.choices(list(indexes_dict.values()), weights=colors_weights, k=36)
 
     return colors_indexes

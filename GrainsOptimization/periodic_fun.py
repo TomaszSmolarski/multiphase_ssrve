@@ -10,7 +10,7 @@ def neighbourhood_type_list(row, col, height, width, period_f):
     neighbourhood_list.append(period_f(row + 1, col + 1, height, width))
 
     neighbourhood_list.append(period_f(row, col - 1, height, width))
-    neighbourhood_list.append(period_f(row - 1, col + 1, height, width))
+    neighbourhood_list.append(period_f(row, col + 1, height, width))
     return neighbourhood_list
 
 

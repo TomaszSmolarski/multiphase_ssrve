@@ -33,11 +33,12 @@ def pyplot_config(background_color, x_size, y_size, dpi):
 
 
 def not_intersecting_polygen(array_of_points):
-    center = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), array_of_points, (0, 0))
-    center = (center[0] / len(array_of_points), (center[1] / len(array_of_points)))
-    array_of_points.sort(key=lambda a: math.atan2(a[1] - center[1], a[0] - center[0]))
-    array_of_points.append(array_of_points[0])
-    return array_of_points
+    points = list(array_of_points)
+    center = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), points, (0, 0))
+    center = (center[0] / len(points), (center[1] / len(points)))
+    points.sort(key=lambda a: math.atan2(a[1] - center[1], a[0] - center[0]))
+    points.append(points[0])
+    return points
 
 
 def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type_f, splines_dpi):
@@ -46,12 +47,15 @@ def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type
         ctr = np.array(ctrp)
         x = ctr[:, 0]
         y = ctr[:, 1]
+
         l = len(x)
+
         '''
         tck, u = interpolate.splprep([x, y], k=3, s=0)
         u = np.linspace(0, 1, (max(l * 2, splines_dpi)), endpoint=True) #700
         out = interpolate.splev(u, tck)
         '''
+
         # interpolate
         t = np.linspace(0, 1, l - 2, endpoint=True)
         t = np.append([0, 0, 0], t)

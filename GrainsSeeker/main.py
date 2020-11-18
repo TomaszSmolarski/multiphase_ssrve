@@ -89,11 +89,12 @@ def mainFunction(image, ratios=[], colors={}, background='', periodical=False):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         index = index + 1
+
+    # DLA KAŻDEJ FAZY WYWOŁANIE FUNKCJI SZUKAJĄCEJ ZIAREN
+    for phase in range(len(ImageConfig.colors_map)):
+        phaseName = list(ImageConfig.colors_map.keys())
+        findContoursAndCalculateRatios(PhaseLayers[:, :, phase], phaseName[phase], background, grains, periodical)
     if ratios:
-        # DLA KAŻDEJ FAZY WYWOŁANIE FUNKCJI SZUKAJĄCEJ ZIAREN
-        for phase in range(len(ImageConfig.colors_map)):
-            phaseName = list(ImageConfig.colors_map.keys())
-            findContoursAndCalculateRatios(PhaseLayers[:, :, phase], phaseName[phase], background, grains, periodical)
         for grain in grains:
             grain.startCalculating()
 

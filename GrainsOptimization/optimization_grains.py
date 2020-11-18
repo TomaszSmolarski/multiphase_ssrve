@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-from random import randrange
+import random
 from GrainsOptimization.grain_grown import create_ssrve_image
 from default_config import d_threads, d_colors, d_x_size, \
     d_y_size, d_starting_points_number, d_pop_size, d_ratios, d_ratios_periodic, d_save_dir_path, \
@@ -28,9 +28,10 @@ class GrainOptimize(AbstractOptimize):
     def generate_pt(self, random, args):
         points = []
         for nr in range(self.starting_points_number):
-            points.append(randrange(0, self.x_size))  # x
-            points.append(randrange(0, self.y_size))  # y
-            color_index = random.choices(range(0, self.colors_len), weights=self.colors_weights, k=1)
+            points.append(random.uniform(0, self.x_size))  # x
+            points.append(random.uniform(0, self.y_size))  # y
+            #color_index = random.choices(range(0, self.colors_len), weights=self.colors_weights, k=1)
+            color_index = (random.uniform(0, self.colors_len))
             points.append(color_index[0])  # color
 
         return points
@@ -57,8 +58,8 @@ class GrainOptimize(AbstractOptimize):
         return create_ssrve_image(*args, height=self.y_size, width=self.x_size,
                                   colors_bgr_list=self.colors_bgr_list, periodic_type_f=self.periodic_type_f)
 
-    def calc_candidate_fitness(self, starting_points):
-        return super().calc_candidate_fitness(starting_points)
+    def calc_candidate_fitness(self, candidate):
+        return super().calc_candidate_fitness(candidate)
 
     def ssrve_observer(self, population, num_generations, num_evaluations, args):
         return super().ssrve_observer(population, num_generations, num_evaluations, args)
