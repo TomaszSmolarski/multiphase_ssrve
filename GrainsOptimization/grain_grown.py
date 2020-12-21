@@ -2,17 +2,17 @@ import copy
 import functools
 import numpy as np
 
-from GrainsOptimization.periodic_fun import period_grid, neighbours_colors_list
+from GrainsOptimization.periodic_fun import neighbours_colors_list, not_period_grid
 
 
-def change_gen(ssrve, height, width, edge_points, periodic_type_f,i):
+def change_gen(ssrve, height, width, edge_points, periodic_type_f):
     copy_ssrve = copy.deepcopy(ssrve)
     points_to_check = set()
     for x, y in edge_points:
         if x <= 0 or x >= width - 1 or y <= 0 or y >= height - 1:
             points_to_check.update(periodic_type_f(x, y, height, width))
         else:
-            points_to_check.update(period_grid(x, y, height, width))
+            points_to_check.update(not_period_grid(x, y, height, width))
 
     new_edge_points = set()
     for x, y in points_to_check:
@@ -20,8 +20,7 @@ def change_gen(ssrve, height, width, edge_points, periodic_type_f,i):
             if x <= 0 or x >= width - 1 or y <= 0 or y >= height - 1:
                 neighbours_list = periodic_type_f(x, y, height, width)
             else:
-                neighbours_list = period_grid(x, y, height, width)
-
+                neighbours_list = not_period_grid(x, y, height, width)
             colors_list = neighbours_colors_list(ssrve, neighbours_list)
             colors_list = list(filter(lambda a:
                                       functools.reduce(lambda i, j: i and j,
@@ -41,7 +40,6 @@ def create_ssrve_image(starting_points, height, width, colors_bgr_list, periodic
         pts.append((x, y))
     i = 0
     while any((255, 255, 255) in row for row in ssrve):
-        ssrve, pts = change_gen(ssrve, height, width, pts, periodic_type_f,i)
-        i+=1
+        ssrve, pts = change_gen(ssrve, height, width, pts, periodic_type_f)
+        i += 1
     return np.array(ssrve)
-

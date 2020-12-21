@@ -43,29 +43,17 @@ def not_intersecting_polygen(array_of_points):
 
 def make_open_cv_image(curves, shapes_colors, x_size, y_size, plt, periodic_type_f, splines_dpi):
     for nr, ctrp in enumerate(curves):
-
         ctr = np.array(ctrp)
         x = ctr[:, 0]
         y = ctr[:, 1]
-
         l = len(x)
-
-        '''
-        tck, u = interpolate.splprep([x, y], k=3, s=0)
-        u = np.linspace(0, 1, (max(l * 2, splines_dpi)), endpoint=True) #700
-        out = interpolate.splev(u, tck)
-        '''
-
-        # interpolate
         t = np.linspace(0, 1, l - 2, endpoint=True)
         t = np.append([0, 0, 0], t)
         t = np.append(t, [1, 1, 1])
         tck = [t, [x, y], 3]
         u3 = np.linspace(0, 1, (max(l * 2, splines_dpi)), endpoint=True)
         out = interpolate.splev(u3, tck)
-
         x, y = periodic_type_f(x_size, y_size, out[0], out[1])
-
         for x_el, y_el in zip(x, y):
             plt.fill(x_el, y_el, color=shapes_colors[nr],
                      edgecolor=shapes_colors[nr], antialiased=False)

@@ -13,19 +13,14 @@ def calculate_candidate_mean_square_error(series_from_ratios, stats, target_seri
                 target_ratios_median = median(list(target_ratios[1].values()))
             else:
                 target_ratios_median = 0
-
             if test_ratios[1]:
                 test_ratios_median = median(list(test_ratios[1].values()))
             else:
                 test_ratios_median = 1
-
             x += ratios_weights[target_ratios[0]] * pow(test_ratios_median - target_ratios_median, 2)
 
     for target_stats_elem, test_stats_elem in zip(target_stats.values(), stats.values()):
         for target_stats, test_stats in zip(list(target_stats_elem.values()), list(test_stats_elem.values())):
             x += stats_weight * pow(test_stats - target_stats, 2)
-            number_of_coefficients+=1
+            number_of_coefficients += 1
     return (1 / number_of_coefficients) * math.sqrt(x)
-
-
-

@@ -18,25 +18,25 @@ from copy import deepcopy
 
 
 class AbstractOptimize(ABC):
-    def __init__(self, picture_path, threads, colors, x_size, y_size,
-                 pop_size, ratios, ratios_periodic, save_dir_path, target_series_from_ratios, target_stats):
+    def __init__(self, task):
         super().__init__()
-        self.picture_path = picture_path
-        self.ratios = ratios
-        self.colors = colors
+        self.picture_path = task["picture_path"]
+        self.ratios = task["job"]["ratios"]
+        self.colors = task["job"]["colors"]
         self.colors_len = len(list(self.colors.values()))
-        self.x_size = x_size
-        self.y_size = y_size
-        self.save_dir_path = save_dir_path
+        self.x_size = task["job"]["x_size"]
+        self.y_size = task["job"]["y_size"]
+        self.save_dir_path = task["job"]["save_dir_path"]
         self.background_color = rgb2hex(*list(self.colors.values())[-1])
         self.background_color_key = list(self.colors.keys())[-1]
-        self.threads = threads
-        self.pop_size = pop_size
+        self.threads = task["job"]["threads"]
+        self.pop_size = task["job"]["pop_size"]
         self.start_time = time()
-        self.ratios_periodic = ratios_periodic
-        self.target_series_from_ratios, self.target_stats = target_series_from_ratios, target_stats
+        self.ratios_periodic = task["job"]["ratios_periodic"]
+        self.target_series_from_ratios, self.target_stats = task["target_series_from_ratios"], task["target_stats"]
         self.target_series_from_ratios_median = self.target_calc()
         self.times_array = []
+        self.task = task
 
     def time_observer(self, population, num_generations, num_evaluations, args):
         elapsed = time() - self.start_time
@@ -62,8 +62,7 @@ class AbstractOptimize(ABC):
             for ratio_name, values in ratios.items():
                 ratios[ratio_name] = median(list(values.values()))
 
-        print(self.target_series_from_ratios, self.target_stats)
-        print(target_series_from_ratios_median)
+        print(target_series_from_ratios_median , self.target_stats)
         return target_series_from_ratios_median
 
     def save_relative_errors_to_file(self, candidate, num_generations):
@@ -79,8 +78,8 @@ class AbstractOptimize(ABC):
                 for ratio_name in ratios.keys():
                     header += "{0}/{1},".format(stat, ratio_name)
 
-            with open(self.save_dir_path+'relative_errors.csv', 'w') as f:
-                f.write('{}\n'.format(header[:-1]))             # [:-1] pomija ostatni przecinek
+            with open(self.save_dir_path + 'relative_errors.csv', 'w') as f:
+                f.write('{}\n'.format(header[:-1]))  # [:-1] pomija ostatni przecinek
             return
         args = (self.create_starting_points_from_candidate(candidate))
         img = self.create_ssrve_image(args)
@@ -100,8 +99,8 @@ class AbstractOptimize(ABC):
                 relative_err = math.fabs((target_stat - ssrve_stat) / target_stat)
                 data_str += "{0:.3f},".format(relative_err)
 
-        with open(self.save_dir_path+'relative_errors.csv', 'a+') as f:
-            f.write('{}\n'.format(data_str[:-1]))               # [:-1] pomija ostatni przecinek
+        with open(self.save_dir_path + 'relative_errors.csv', 'a+') as f:
+            f.write('{}\n'.format(data_str[:-1]))  # [:-1] pomija ostatni przecinek
 
     def coefficients_observer(self, population, num_generations, num_evaluations, args):
         population_copy = population.copy()
@@ -167,69 +166,68 @@ class AbstractOptimize(ABC):
         seed = time()  # 1234567
         prng.seed(seed)
 
-        ea = inspyred.ec.DEA(prng)
-        ea.observer = [inspyred.ec.observers.file_observer, inspyred.ec.observers.stats_observer,
-                       self.ssrve_observer, self.time_observer, self.coefficients_observer]
-        ea.selector = inspyred.ec.selectors.tournament_selection
-        # ea.selector = inspyred.ec.selectors.truncation_selection
-        # ea.selector = inspyred.ec.selectors.rank_selection
-        ea.variator = [inspyred.ec.variators.blend_crossover, inspyred.ec.variators.gaussian_mutation]
+        if self.task["optimization_method"] == "DEA":
+            ea = inspyred.ec.DEA(prng)
+            ea.observer = [inspyred.ec.observers.file_observer, inspyred.ec.observers.stats_observer,
+                           self.ssrve_observer, self.time_observer, self.coefficients_observer]
+            ea.selector = inspyred.ec.selectors.tournament_selection
+            ea.variator = [inspyred.ec.variators.blend_crossover, inspyred.ec.variators.gaussian_mutation]
+            ea.replacer = inspyred.ec.replacers.truncation_replacement
 
-        ea.replacer = inspyred.ec.replacers.truncation_replacement
-        # ea.replacer = inspyred.ec.replacers.crowding_replacement
-
-        ea.terminator = [
-            inspyred.ec.terminators.no_improvement_termination,
-            inspyred.ec.terminators.evaluation_termination,
-
-            inspyred.ec.terminators.user_termination
-        ]#inspyred.ec.terminators.diversity_termination,
-        final_pop = ea.evolve(generator=self.generate_pt,
-                              evaluator=self.evaluate_pt,
-                              pop_size=self.pop_size,
-                              bounder=self.bound_pt,
-                              maximize=False,
-                              max_evaluations=1000,
-                              num_selected=self.pop_size,
-                              tournament_size=2,  # 2 best
-                              crossover_rate=0.2,  # 0.2 best
-                              num_crossover_points=1,
-                              mutation_rate=0.285,  # 0.285 best
-                              gaussian_mean=0,
-                              gaussian_stdev=1,
-                              statistics_file=open(self.save_dir_path + "stats.csv", "w"),
-                              individuals_file=open(self.save_dir_path + "individuals.csv", "w"),
-
-                              )
-
-        '''
-        ea = inspyred.swarm.PSO(prng) #nope for splines
-        ea.observer = [inspyred.ec.observers.file_observer, inspyred.ec.observers.stats_observer, self.ssrve_observer,
-                       self.time_observer]
-        ea.terminator = [inspyred.ec.terminators.evaluation_termination,
-                         inspyred.ec.terminators.average_fitness_termination]
-
-        ea.topology = inspyred.swarm.topologies.star_topology  # or ring_topology, star better
-        final_pop = ea.evolve(generator=self.generate_pt,
-                              evaluator=self.evaluate_pt,
-                              pop_size=self.pop_size,
-                              bounder=self.bound_pt,
-                              maximize=False,
-                              statistics_file=open(self.save_dir_path + "stats.csv", "w"),
-                              individuals_file=open(self.save_dir_path + "individuals.csv", "w"),
-                              max_evaluations=1000,
-                              neighborhood_size=3,
-                              inertia=0.5,  # default 0.5
-                              cognitive_rate=1.4,  # default 2.1
-                              social_rate=1.4,  # default 2.1
-                              )
-        '''
+            ea.terminator = [
+                inspyred.ec.terminators.generation_termination
+            ]  # inspyred.ec.terminators.diversity_termination,
+            # inspyred.ec.terminators.no_improvement_termination,
+            # inspyred.ec.terminators.evaluation_termination,
+            final_pop = ea.evolve(generator=self.generate_pt,
+                                  evaluator=self.evaluate_pt,
+                                  pop_size=self.pop_size,
+                                  bounder=self.bound_pt,
+                                  maximize=False,
+                                  max_evaluations=self.task["job"]["max_evaluations"],
+                                  max_generations=self.task["job"]["max_generations"],
+                                  num_selected=self.pop_size,
+                                  tournament_size=self.task["DEA"]["tournament_size"],  # 2 best
+                                  crossover_rate=self.task["DEA"]["crossover_rate"],  # 0.2 best
+                                  num_crossover_points=self.task["DEA"]["num_crossover_points"],
+                                  mutation_rate=self.task["DEA"]["mutation_rate"],  # 0.285 best
+                                  gaussian_mean=self.task["DEA"]["gaussian_mean"],
+                                  gaussian_stdev=self.task["DEA"]["gaussian_stdev"],
+                                  statistics_file=open(self.save_dir_path + "stats.csv", "w"),
+                                  individuals_file=open(self.save_dir_path + "individuals.csv", "w"),
+                                  )
+        elif self.task["optimization_method"] == "PSO":
+            ea = inspyred.swarm.PSO(prng)
+            ea.observer = [inspyred.ec.observers.file_observer, inspyred.ec.observers.stats_observer,
+                           self.ssrve_observer,
+                           self.time_observer, self.coefficients_observer]
+            ea.terminator = [inspyred.ec.terminators.generation_termination]
+            # inspyred.ec.terminators.evaluation_termination
+            # inspyred.ec.terminators.average_fitness_termination
+            ea.topology = inspyred.swarm.topologies.star_topology  # or ring_topology, star better
+            final_pop = ea.evolve(generator=self.generate_pt,
+                                  evaluator=self.evaluate_pt,
+                                  pop_size=self.pop_size,
+                                  bounder=self.bound_pt,
+                                  maximize=False,
+                                  statistics_file=open(self.save_dir_path + "stats.csv", "w"),
+                                  individuals_file=open(self.save_dir_path + "individuals.csv", "w"),
+                                  max_evaluations=self.task["job"]["max_evaluations"],
+                                  max_generations=self.task["job"]["max_generations"],
+                                  inertia=self.task["PSO"]["inertia"],  # default 0.5
+                                  cognitive_rate=self.task["PSO"]["cognitive_rate"],  # default 2.1
+                                  social_rate=self.task["PSO"]["social_rate"],  # default 2.1
+                                  )
+        else:
+            raise Exception('Optimization method should be PSO or DEA not: {}. Check task in default_config.py file'
+                            .format(self.task["optimization_method"]))
 
         times_sum = sum([sec[1] for sec in self.times_array], timedelta())
         csvfile = open(self.save_dir_path + 'times.csv', 'w', newline='')
         writer = csv.writer(csvfile)
         writer.writerows(self.times_array)
         writer.writerow(["sum/avg", times_sum, times_sum / len(self.times_array)])
+        writer.writerow(["seed", seed])
         for nr, c in enumerate(final_pop):
             print(c)
             writer.writerow([nr, c])

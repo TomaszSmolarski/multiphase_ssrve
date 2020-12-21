@@ -18,9 +18,9 @@ def makePeriodicalImage():
                     phaseLayersPeriodical[y + yOffset, x + xOffset, 1] = ImageConfig.image[y, x, 1]
                     phaseLayersPeriodical[y + yOffset, x + xOffset, 2] = ImageConfig.image[y, x, 2]
 
-    cv2.imshow('bl', phaseLayersPeriodical)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.imshow('bl', phaseLayersPeriodical)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
     ImageConfig.image = phaseLayersPeriodical
 
 
