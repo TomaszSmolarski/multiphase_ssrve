@@ -3,10 +3,12 @@
 import math
 from random import randrange, uniform
 
-from SplineOptimization.shapes_fun import calc_grid_size, indexes_to_rgb
-from SplineOptimization.ssrve_fun import create_ssrve_image
+# from SplineOptimization.shapes_fun import calc_grid_size, indexes_to_rgb
+from SplineOptimization.nurbs_image import NurbsImage
 from optimization_abstract import AbstractOptimize
-from SplineOptimization.periodic_fun import period_splines, not_period_splines
+
+
+# from SplineOptimization.periodic_fun import period_splines, not_period_splines
 
 
 class SplineOptimize(AbstractOptimize):
@@ -16,15 +18,32 @@ class SplineOptimize(AbstractOptimize):
         self.knots_number = task["SPL"]["knots_number"]
         self.number_of_shapes = task["SPL"]["number_of_shapes"]
         self.colors_of_shapes = {phase: color for phase, color in self.colors.items() if
-                                 phase != self.background_color_key}
+                                 phase != self._background_color_key}
         self.color_and_activation_range = len(self.colors_of_shapes)
-        self.grid_size = calc_grid_size(self.number_of_shapes)
-        self.extra_bounding_dist = self.calc_shapes_range_dist()
+        self.grid_size = self.__calc_grid_size()
+        self.extra_bounding_dist = self.__calc_shapes_range_dist()
         self.activation_number = task["job"]["activation_value"] * self.color_and_activation_range
-        self.periodic_type_f = period_splines if task["SPL"]["periodic"] else not_period_splines
-        self.splines_dpi = 100 if self.periodic_type_f.__name__ == "not_period_splines" else 420
+        self.nurbs_image = NurbsImage(background_color=self._background_color, x_size=self.x_size,
+                                      y_size=self.y_size, periodic=True if task["SPL"]["periodic"] else False)
 
-    def calc_shapes_range_dist(self):
+    def __calc_grid_size(self):
+        y = round(math.sqrt(self.number_of_shapes))
+        if y * y >= self.number_of_shapes:
+            return [y, y]
+        else:
+            return [y + 1, y]
+
+    def __indexes_to_rgb(self, indexes_list):
+        rgb_list = []
+        colors_len = len(self.colors_of_shapes)
+        colors_list = list(self.colors_of_shapes.values())
+        for index in indexes_list:
+            nr = round(index) % colors_len
+            color = colors_list[nr]
+            rgb_list.append(self.rgb2hex(color[0], color[1], color[2]))
+        return rgb_list
+
+    def __calc_shapes_range_dist(self):
         extra_range = [0, 0]  # [math.floor(dist[0]/4),math.floor(dist[1]/4)] # not necessary
         dist = [math.floor(self.x_size / (2 * self.grid_size[0])) + extra_range[0],
                 math.floor(self.y_size / (2 * self.grid_size[1])) + extra_range[1]]
@@ -89,12 +108,11 @@ class SplineOptimize(AbstractOptimize):
             if len(curve) > 2:
                 end_colors_list.append(color)
                 end_curves.append(curve)
-        shapes_colors = indexes_to_rgb(self.colors_of_shapes, end_colors_list)
+        shapes_colors = self.__indexes_to_rgb(end_colors_list)
         return end_curves, shapes_colors
 
     def create_ssrve_image(self, args):
-        return create_ssrve_image(*args, background_color=self.background_color, x_size=self.x_size, y_size=self.y_size,
-                                  periodic_type_f=self.periodic_type_f, splines_dpi=self.splines_dpi)
+        return self.nurbs_image.create_ssrve_image(*args)
 
     def calc_candidate_fitness(self, candidate):
         return super().calc_candidate_fitness(candidate)

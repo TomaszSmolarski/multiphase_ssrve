@@ -2,9 +2,8 @@
 
 
 import random
-from GrainsOptimization.grain_grown import create_ssrve_image
+from GrainsOptimization.grain_growth import GrainGrowth
 from optimization_abstract import AbstractOptimize
-from GrainsOptimization.periodic_fun import period_grid, not_period_grid
 
 
 class GrainOptimize(AbstractOptimize):
@@ -12,7 +11,10 @@ class GrainOptimize(AbstractOptimize):
         super().__init__(task=task)
         self.starting_points_number = task["GR"]["starting_points_number"]
         self.colors_bgr_list = [(item[2], item[1], item[0]) for key, item in self.colors.items()]
-        self.periodic_type_f = period_grid if task["GR"]["periodic"] else not_period_grid
+        self.grain_growth = GrainGrowth(height=self.y_size, width=self.x_size,
+                                        colors_bgr_list=self.colors_bgr_list,
+                                        periodic=True if task["GR"]["periodic"] else False)
+        self.colors_len = len(list(self.colors.values()))
 
     def generate_pt(self, random, args):
         points = []
@@ -42,8 +44,7 @@ class GrainOptimize(AbstractOptimize):
         return [pts]  # Because args are tuple and i want to have list of points I have to pack this list with []
 
     def create_ssrve_image(self, args):
-        return create_ssrve_image(*args, height=self.y_size, width=self.x_size,
-                                  colors_bgr_list=self.colors_bgr_list, periodic_type_f=self.periodic_type_f)
+        return self.grain_growth.create_ssrve_image(*args)
 
     def calc_candidate_fitness(self, candidate):
         return super().calc_candidate_fitness(candidate)

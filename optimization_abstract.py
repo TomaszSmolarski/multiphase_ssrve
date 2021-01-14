@@ -9,12 +9,9 @@ import inspyred
 from datetime import timedelta
 from GrainsSeeker.main import mainFunction
 from time import time
-
-from SplineOptimization.shapes_fun import rgb2hex
-from SplineOptimization.ssrve_fun import save_to_file
-from fitness_fun import calculate_candidate_mean_square_error
 from statistics import median
 from copy import deepcopy
+from default_config import ratios_weights
 
 
 class AbstractOptimize(ABC):
@@ -23,15 +20,14 @@ class AbstractOptimize(ABC):
         self.picture_path = task["picture_path"]
         self.ratios = task["job"]["ratios"]
         self.colors = task["job"]["colors"]
-        self.colors_len = len(list(self.colors.values()))
         self.x_size = task["job"]["x_size"]
         self.y_size = task["job"]["y_size"]
         self.save_dir_path = task["job"]["save_dir_path"]
-        self.background_color = rgb2hex(*list(self.colors.values())[-1])
-        self.background_color_key = list(self.colors.keys())[-1]
+        self._background_color = self.rgb2hex(*list(self.colors.values())[-1])
+        self._background_color_key = list(self.colors.keys())[-1]
         self.threads = task["job"]["threads"]
         self.pop_size = task["job"]["pop_size"]
-        self.start_time = time()
+        self.__start_time = time()
         self.ratios_periodic = task["job"]["ratios_periodic"]
         self.target_series_from_ratios, self.target_stats = task["target_series_from_ratios"], task["target_stats"]
         self.target_series_from_ratios_median = self.target_calc()
@@ -39,10 +35,21 @@ class AbstractOptimize(ABC):
         self.task = task
 
     def time_observer(self, population, num_generations, num_evaluations, args):
-        elapsed = time() - self.start_time
+        elapsed = time() - self.__start_time
         print("--- Evaluation of generation {0} took {1} ---".format(num_generations, str(timedelta(seconds=elapsed))))
         self.times_array.append([num_generations, timedelta(seconds=elapsed)])
-        self.start_time = time()
+        self.__start_time = time()
+
+    @staticmethod
+    def rgb2hex(r, g, b):
+        return "#{:02x}{:02x}{:02x}".format(r, g, b)
+
+    @staticmethod
+    def save_to_file(file_path, image_open_cv):
+        try:
+            cv2.imwrite(file_path, img=image_open_cv)
+        except:
+            print('first render file')
 
     def target_calc(self):
         if not (self.target_series_from_ratios and self.target_stats):
@@ -51,18 +58,18 @@ class AbstractOptimize(ABC):
                                                                              colors=self.colors,
                                                                              periodical=self.ratios_periodic)
         new_background_color = max(self.target_stats['onePointprobability'].items(), key=operator.itemgetter(1))[0]
-        if new_background_color != self.background_color_key:
-            self.background_color_key = new_background_color
-            self.background_color = rgb2hex(*list(self.colors[new_background_color]))
+        if new_background_color != self._background_color_key:
+            self._background_color_key = new_background_color
+            self._background_color = self.rgb2hex(*list(self.colors[new_background_color]))
 
-        self.target_series_from_ratios[self.background_color_key] = {}
+        self.target_series_from_ratios[self._background_color_key] = {}
 
         target_series_from_ratios_median = deepcopy(self.target_series_from_ratios)
         for phase, ratios in target_series_from_ratios_median.items():
             for ratio_name, values in ratios.items():
                 ratios[ratio_name] = median(list(values.values()))
 
-        print(target_series_from_ratios_median , self.target_stats)
+        print(target_series_from_ratios_median, self.target_stats)
         return target_series_from_ratios_median
 
     def save_relative_errors_to_file(self, candidate, num_generations):
@@ -101,6 +108,29 @@ class AbstractOptimize(ABC):
 
         with open(self.save_dir_path + 'relative_errors.csv', 'a+') as f:
             f.write('{}\n'.format(data_str[:-1]))  # [:-1] pomija ostatni przecinek
+
+    def calculate_candidate_mean_square_error(self, series_from_ratios, stats):
+        x = 0
+        number_of_coefficients = 0
+        stats_weight = 1
+        for target_phase_params, test_phase_params in zip(self.target_series_from_ratios.values(),
+                                                          series_from_ratios.values()):
+            for target_ratios, test_ratios in zip(target_phase_params.items(), test_phase_params.items()):
+                if target_ratios[1]:
+                    target_ratios_median = median(list(target_ratios[1].values()))
+                else:
+                    target_ratios_median = 0
+                if test_ratios[1]:
+                    test_ratios_median = median(list(test_ratios[1].values()))
+                else:
+                    test_ratios_median = 1
+                x += ratios_weights[target_ratios[0]] * pow(test_ratios_median - target_ratios_median, 2)
+
+        for target_stats_elem, test_stats_elem in zip(self.target_stats.values(), stats.values()):
+            for target_stats, test_stats in zip(list(target_stats_elem.values()), list(test_stats_elem.values())):
+                x += stats_weight * pow(test_stats - target_stats, 2)
+                number_of_coefficients += 1
+        return (1 / number_of_coefficients) * math.sqrt(x)
 
     def coefficients_observer(self, population, num_generations, num_evaluations, args):
         population_copy = population.copy()
@@ -143,11 +173,9 @@ class AbstractOptimize(ABC):
         args = (self.create_starting_points_from_candidate(candidate))
         img = self.create_ssrve_image(args)
         series_from_ratios, stats = mainFunction(img, ratios=self.ratios, colors=self.colors,
-                                                 background=self.background_color_key, periodical=self.ratios_periodic)
+                                                 background=self._background_color_key, periodical=self.ratios_periodic)
         # Blad sredniokwadratowy dla danego osobnika
-        candidate_fitness = calculate_candidate_mean_square_error(series_from_ratios, stats,
-                                                                  self.target_series_from_ratios,
-                                                                  self.target_stats)
+        candidate_fitness = self.calculate_candidate_mean_square_error(series_from_ratios, stats)
         print(series_from_ratios, stats, candidate_fitness, sep="---")
         return candidate_fitness
 
@@ -158,7 +186,7 @@ class AbstractOptimize(ABC):
         best = population_copy[0].candidate
         args = (self.create_starting_points_from_candidate(best))
         img = self.create_ssrve_image(args)
-        save_to_file(self.save_dir_path + 'Results/BEST_IN_{0}_POPULATION.png'.format(num_generations), img)
+        self.save_to_file(self.save_dir_path + 'Results/BEST_IN_{0}_POPULATION.png'.format(num_generations), img)
 
     @abstractmethod
     def optimize(self):

@@ -16,6 +16,7 @@ def remove_previous_results(path):
 
 
 if __name__ == '__main__':
+
     save_dir_path = task["job"]["save_dir_path"]
     try:
         os.makedirs(save_dir_path + "Results")
